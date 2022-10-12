@@ -1,0 +1,116 @@
+---
+title: "p8105_hw3_as6447"
+author: "Armaan Sodhi"
+date: "2022-10-12"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+##Problem0
+```{r}
+library(tidyverse)
+library(ggridges)
+```
+
+##Problem1
+```{r}
+library(p8105.datasets)
+data("instacart")
+```
+1.The goal is to do some exploration of this dataset. 
+   a.To that end, write a short description of the dataset, noting: 
+      
+      aa.the size and structure of the data
+      
+      ab.describing some key variables 
+      
+      ac.giving illstrative examples of observations. 
+```{r}
+instacard%>%
+```
+
+
+Then, do or answer the following (commenting on the results of each):
+
+2.How many aisles are there, and which aisles are the most items ordered from?
+
+3.Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. 
+   a.Arrange aisles sensibly, and organize your plot so others can read it.
+
+4.Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. 
+   a.Include the number of times each item is ordered in your table.
+
+5.Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; 
+   a.format this table for human readers (i.e. produce a 2 x 7 table).
+
+##Problem2
+
+
+1.Load, tidy, and otherwise wrangle the data. Your final dataset should include all originally observed variables and values; have useful variable names; 
+   a.include a weekday vs weekend variable; and 
+   b.encode data with reasonable variable classes. 
+   c.Describe the resulting dataset (e.g. what variables exist, how many observations, etc).
+```{r}
+Accel_data = read_csv('data/accel_data.csv') %>%
+   janitor::clean_names()%>%
+   mutate(
+      weekday_weekend = case_when(
+         day %in% c('Monday', 'Tuesday','Wednesday','Thursday','Friday')~'weekday',
+         day %in% c('Saturday','Sunday')~ 'weekend')
+         )%>%
+   relocate(weekday_weekend,.after=day)
+```
+
+2.Traditional analyses of accelerometer data focus on the total activity over the day. 
+   a.Using your tidied dataset, aggregate across minutes to create a total activity variable for each day, and 
+   b.create a table showing these totals. 
+   c.Are any trends apparent?
+```{r}
+
+```
+
+3.Accelerometer data allows the inspection activity over the course of the day. 
+a.Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. 
+b.Describe in words any patterns or conclusions you can make based on this graph.
+
+```{r}
+
+```
+
+##Problem3
+```{r}
+library(p8105.datasets)
+data("ny_noaa")
+```
+
+1.The goal is to do some exploration of this dataset. 
+a.To that end, write a short description of the dataset, noting the size and structure of the data, describing some key variables, and indicating the extent to which missing data is an issue. 
+b.Then, do or answer the following (commenting on the results of each):
+```{r}
+
+```
+
+2.Do some data cleaning. 
+a.Create separate variables for year, month, and day. 
+b.Ensure observations for temperature, precipitation, and snowfall are given in reasonable units.
+c.For snowfall, what are the most commonly observed values? Why?
+```{r}
+
+```
+
+3.Make a two-panel plot showing the average max temperature in January and in July in each station across years. 
+a.Is there any observable / interpretable structure? 
+b.Any outliers?
+```{r}
+
+```
+
+4.Make a two-panel plot showing: 
+a.tmax vs tmin for the full dataset (note that a scatterplot may not be the best option)
+b. make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
+```{r}
+
+```
+
