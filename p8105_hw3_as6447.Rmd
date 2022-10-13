@@ -46,37 +46,71 @@ Then, do or answer the following (commenting on the results of each):
    a.format this table for human readers (i.e. produce a 2 x 7 table).
 
 ##Problem2
-
-
 1.Load, tidy, and otherwise wrangle the data. Your final dataset should include all originally observed variables and values; have useful variable names; 
    a.include a weekday vs weekend variable; and 
    b.encode data with reasonable variable classes. 
    c.Describe the resulting dataset (e.g. what variables exist, how many observations, etc).
 ```{r}
-Accel_data = read_csv('data/accel_data.csv') %>%
-   janitor::clean_names()%>%
+Accel_data_tidy = 
+   read_csv('data/accel_data.csv')%>%
+   janitor::clean_names() %>%
    mutate(
       weekday_weekend = case_when(
          day %in% c('Monday', 'Tuesday','Wednesday','Thursday','Friday')~'weekday',
          day %in% c('Saturday','Sunday')~ 'weekend')
          )%>%
-   relocate(weekday_weekend,.after=day)
+   relocate(weekday_weekend,.after=day)%>%
+    pivot_longer(
+      activity_1:activity_1440,
+      names_to = 'time' ,
+      names_prefix = 'activity_',
+      values_to = 'activity_count'
+   )%>%mutate(
+      time = as.numeric(time)
+   )
+  
 ```
+There are 35 observations and 1444 Variables. These include the variables for `week` (what week it is), `day_id`(what number of day is it), `day`(what name of the day it is), and `weekday_weekend` (if it is a weekend or weekday). The remaining variables are the `activity` variables are the activity counts for each minute of a 24-hour day starting from midnight.
 
 2.Traditional analyses of accelerometer data focus on the total activity over the day. 
    a.Using your tidied dataset, aggregate across minutes to create a total activity variable for each day, and 
+   
    b.create a table showing these totals. 
+   
    c.Are any trends apparent?
 ```{r}
-
+Accel_data_agg=
+   Accel_data_tidy%>%
+   group_by(day,week)%>%
+   summarize(
+      total_activity=sum(activity_count)
+   )%>%
+   pivot_wider(
+      names_from = 'day',
+      values_from = 'total_activity'
+   )%>%
+   relocate(Sunday,Monday,Tuesday,Wednesday,Thursday,Friday, .after = week)
 ```
 
+From evaluating the data we can find that there is a decrease in the `total activity` committed across `week` with the data from week 1 to week 5. There is also a decrease in the `total activity` committed across the days with `Sunday` having the highest score and `Saturday` having the lowest score. 
+
 3.Accelerometer data allows the inspection activity over the course of the day. 
-a.Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. 
-b.Describe in words any patterns or conclusions you can make based on this graph.
+   
+   a.Make a single-panel plot that shows the 
+      aa.24-hour activity time courses for each day  
+      ab.use color to indicate day of the week. 
+   
+   b.Describe in words any patterns or conclusions you can make based on this graph.
 
 ```{r}
-
+Accel_data_tidy %>%
+   ggplot(aes(x = time,y = activity_count,color = day)) + 
+   geom_point( alpha = 0.5) +
+   labs(
+      title = '24-hour activity time courses for each day ',
+      x = 'Time in Minutes',
+      y = 'Activity Measure'
+   )
 ```
 
 ##Problem3
@@ -86,16 +120,18 @@ data("ny_noaa")
 ```
 
 1.The goal is to do some exploration of this dataset. 
-a.To that end, write a short description of the dataset, noting the size and structure of the data, describing some key variables, and indicating the extent to which missing data is an issue. 
-b.Then, do or answer the following (commenting on the results of each):
+   a.To that end, write a short description of the dataset, noting the size and structure of the data, describing some key variables, and       indicating the extent to which missing data is an issue. 
 ```{r}
-
+noaa_data = data("ny_noaa") %>%
+janitor::clean_names()
 ```
 
 2.Do some data cleaning. 
-a.Create separate variables for year, month, and day. 
-b.Ensure observations for temperature, precipitation, and snowfall are given in reasonable units.
-c.For snowfall, what are the most commonly observed values? Why?
+   a.Create separate variables for year, month, and day. 
+   
+   b.Ensure observations for temperature, precipitation, and snowfall are given in reasonable units.
+   
+   c.For snowfall, what are the most commonly observed values? Why?
 ```{r}
 
 ```
