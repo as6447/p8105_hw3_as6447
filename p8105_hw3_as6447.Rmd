@@ -12,6 +12,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(ggridges)
+library(hexbin)
+library(patchwork)
 ```
 
 ##Problem1
@@ -28,7 +30,7 @@ data("instacart")
       
       ac.giving illstrative examples of observations. 
 ```{r}
-instacard%>%
+instacar%>%
 ```
 
 
@@ -90,6 +92,9 @@ Accel_data_agg=
       values_from = 'total_activity'
    )%>%
    relocate(Sunday,Monday,Tuesday,Wednesday,Thursday,Friday, .after = week)
+
+accel_Data_agg_table=
+   Accel_data_agg%>%table
 ```
 
 From evaluating the data we can find that there is a decrease in the `total activity` committed across `week` with the data from week 1 to week 5. There is also a decrease in the `total activity` committed across the days with `Sunday` having the highest score and `Saturday` having the lowest score. 
@@ -104,7 +109,7 @@ From evaluating the data we can find that there is a decrease in the `total acti
 
 ```{r}
 Accel_data_tidy %>%
-   ggplot(aes(x = time,y = activity_count,color = day)) + 
+   ggplot(aes(x = time, y = activity_count, color = day)) + 
    geom_point( alpha = 0.5) +
    labs(
       title = '24-hour activity time courses for each day ',
@@ -120,11 +125,10 @@ data("ny_noaa")
 ```
 
 1.The goal is to do some exploration of this dataset. 
-   a.To that end, write a short description of the dataset, noting the size and structure of the data, describing some key variables, and       indicating the extent to which missing data is an issue. 
-```{r}
-noaa_data = data("ny_noaa") %>%
-janitor::clean_names()
-```
+   a.To that end, write a short description of the dataset, noting the size and structure of the data, describing some key variables, and indicating the extent to which missing data is an issue. 
+
+
+There are 259176 observations and 7 variables. 
 
 2.Do some data cleaning. 
    a.Create separate variables for year, month, and day. 
@@ -133,20 +137,71 @@ janitor::clean_names()
    
    c.For snowfall, what are the most commonly observed values? Why?
 ```{r}
+ny_noaa_tidy =
+   ny_noaa %>%
+   janitor::clean_names()%>%
+   separate(col = date, into = c('year','month','day'), sep = '-')%>%
+      mutate(
+         month = as.numeric(month),
+         month = month.abb[month],
+         tmax = as.integer(tmax),
+         tmin = as.integer(tmin),
+         year = as.numeric(year)
+         )
 
+   ny_noaa_tidy%>%
+   group_by(snwd)%>%
+   summarize (n_obs = n())
 ```
+The majority of observations in the `snowfall` variable is `0`, with there being `1621683` counts. 
 
 3.Make a two-panel plot showing the average max temperature in January and in July in each station across years. 
-a.Is there any observable / interpretable structure? 
-b.Any outliers?
+   
+   a.Is there any observable / interpretable structure? 
 ```{r}
+ny_noaa_tidy = 
+   ny_noaa_tidy%>%
+    group_by(id,month,year) %>%
+   mutate(
+      tmax_avg = mean(tmax, na.rm = TRUE)
+   )
+```
 
+   b.Any outliers?
+```{r}
+   ny_noaa_tidy %>%
+   filter(month %in% c('Jul','Jan')) %>%
+   ggplot(aes(x = year, y = tmax_avg, group = id,color = month)) + 
+   geom_line() + facet_grid(. ~ month) + theme(legend.position = "none")+
+   scale_x_continuous(
+      breaks = c(1981,1986,1991,1996,2001,2006,2010),
+      labels = c('1981','1986','1991','1996','2001','2006','2010')
+)
 ```
 
 4.Make a two-panel plot showing: 
-a.tmax vs tmin for the full dataset (note that a scatterplot may not be the best option)
-b. make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
-```{r}
+   
+   a.tmax vs tmin for the full dataset (note that a scatterplot may not be the best option)
+   
+   b. make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
 
+```{r}
+ tmax_vs_tmin=   
+   ny_noaa_tidy %>%
+   ggplot(aes(x = tmin, y = tmax)) + 
+   geom_hex() + theme_bw()+
+   labs(title = "tmax vs tmin")
+
+   snows=
+   ny_noaa_tidy %>% 
+   filter (snow > 0 & snow < 100)%>%
+   ggplot(aes(x = snow)) + 
+   geom_histogram() +
+   facet_grid(. ~ year) +
+   theme(axis.text.x = element_blank(), legend.position = "none")+
+   labs(title = " Distribution of snowfall by year")
+   
+   (tmax_vs_tmin + snows)
+   
 ```
 
