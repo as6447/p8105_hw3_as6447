@@ -14,44 +14,72 @@ library(tidyverse)
 library(ggridges)
 library(hexbin)
 library(patchwork)
+library(p8105.datasets)
 ```
 
 ##Problem1
+#### Read in the data
+
 ```{r}
-library(p8105.datasets)
 data("instacart")
+
+instacart = 
+  instacart %>% 
+  as_tibble(instacart)
 ```
-1.The goal is to do some exploration of this dataset. 
-   a.To that end, write a short description of the dataset, noting: 
-      
-      aa.the size and structure of the data
-      
-      ab.describing some key variables 
-      
-      ac.giving illstrative examples of observations. 
+
+#### Answer questions about the data
+
+This dataset contains `r nrow(instacart)` rows and `r ncol(instacart)` columns, with each row resprenting a single product from an instacart order. Variables include identifiers for user, order, and product; the order in which each product was added to the cart. There are several order-level variables, describing the day and time of the order, and number of days since prior order. Then there are several item-specific variables, describing the product name (e.g. Yogurt, Avocado), department (e.g. dairy and eggs, produce), and aisle (e.g. yogurt, fresh fruits), and whether the item has been ordered by this user in the past. In total, there are `r instacart %>% select(product_id) %>% distinct %>% count` products found in `r instacart %>% select(user_id, order_id) %>% distinct %>% count` orders from `r instacart %>% select(user_id) %>% distinct %>% count` distinct users.
+
+Below is a table summarizing the number of items ordered from aisle. In total, there are 134 aisles, with fresh vegetables and fresh fruits holding the most items ordered by far.
+
 ```{r}
-instacar%>%
+instacart %>% 
+  count(aisle) %>% 
+  arrange(desc(n))
 ```
 
+Next is a plot that shows the number of items ordered in each aisle. Here, aisles are ordered by ascending number of items.
 
-Then, do or answer the following (commenting on the results of each):
+```{r}
+instacart %>% 
+  count(aisle) %>% 
+  filter(n > 10000) %>% 
+  mutate(aisle = fct_reorder(aisle, n)) %>% 
+  ggplot(aes(x = aisle, y = n)) + 
+  geom_point() + 
+  labs(title = "Number of items ordered in each aisle") +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
-2.How many aisles are there, and which aisles are the most items ordered from?
+```
 
-3.Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. 
-   a.Arrange aisles sensibly, and organize your plot so others can read it.
+Our next table shows the three most popular items in aisles `baking ingredients`, `dog food care`, and `packaged vegetables fruits`, and includes the number of times each item is ordered in your table.
 
-4.Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. 
-   a.Include the number of times each item is ordered in your table.
+```{r}
+instacart %>% 
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%
+  group_by(aisle) %>% 
+  count(product_name) %>% 
+  mutate(rank = min_rank(desc(n))) %>% 
+  filter(rank < 4) %>% 
+  arrange(desc(n)) %>%
+  knitr::kable()
+```
 
-5.Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; 
-   a.format this table for human readers (i.e. produce a 2 x 7 table).
+Finally is a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week. This table has been formatted in an untidy manner for human readers. Pink Lady Apples are generally purchased slightly earlier in the day than Coffee Ice Cream, with the exception of day 5.
+
+```{r}
+instacart %>%
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+  group_by(product_name, order_dow) %>%
+  summarize(mean_hour = mean(order_hour_of_day)) %>%
+  spread(key = order_dow, value = mean_hour) %>%
+  knitr::kable(digits = 2)
+```
 
 ##Problem2
-1.Load, tidy, and otherwise wrangle the data. Your final dataset should include all originally observed variables and values; have useful variable names; 
-   a.include a weekday vs weekend variable; and 
-   b.encode data with reasonable variable classes. 
-   c.Describe the resulting dataset (e.g. what variables exist, how many observations, etc).
+
 ```{r}
 Accel_data_tidy = 
    read_csv('data/accel_data.csv')%>%
@@ -72,14 +100,7 @@ Accel_data_tidy =
    )
   
 ```
-There are 35 observations and 1444 Variables. These include the variables for `week` (what week it is), `day_id`(what number of day is it), `day`(what name of the day it is), and `weekday_weekend` (if it is a weekend or weekday). The remaining variables are the `activity` variables are the activity counts for each minute of a 24-hour day starting from midnight.
-
-2.Traditional analyses of accelerometer data focus on the total activity over the day. 
-   a.Using your tidied dataset, aggregate across minutes to create a total activity variable for each day, and 
-   
-   b.create a table showing these totals. 
-   
-   c.Are any trends apparent?
+From the use of `nrow` and `ncol` we find that there are 35 observations and 1444 Variables. These include the variables for `week` (what week it is), `day_id`(what number of day is it), `day`(what name of the day it is), and `weekday_weekend` (if it is a weekend or weekday). We use pivot longer to create the `time` and `activity_count` variables which tell us the time at which the activity occured and the value of the activity that occurred. The remaining variables are the `activity` variables are the activity counts for each minute of a 24-hour day starting from midnight.
 ```{r}
 Accel_data_agg=
    Accel_data_tidy%>%
@@ -97,15 +118,8 @@ accel_Data_agg_table=
    Accel_data_agg%>%table
 ```
 
-From evaluating the data we can find that there is a decrease in the `total activity` committed across `week` with the data from week 1 to week 5. There is also a decrease in the `total activity` committed across the days with `Sunday` having the highest score and `Saturday` having the lowest score. 
+Using `summary(Accel_data_agg)` we can find that there is a decrease in the `total activity` committed across `week` with the data from week 1 to week 5. There is also a decrease in the `total activity` committed across the days with `Sunday` having the highest score (median 422018) and `Saturday` having the lowest score (273847). 
 
-3.Accelerometer data allows the inspection activity over the course of the day. 
-   
-   a.Make a single-panel plot that shows the 
-      aa.24-hour activity time courses for each day  
-      ab.use color to indicate day of the week. 
-   
-   b.Describe in words any patterns or conclusions you can make based on this graph.
 
 ```{r}
 Accel_data_tidy %>%
@@ -116,26 +130,22 @@ Accel_data_tidy %>%
       x = 'Time in Minutes',
       y = 'Activity Measure'
    )
+ggsave("24-hour activity time courses for each day.pdf")
 ```
+
+I created a scatterplot of the data evaulating the `Time in Minutes` (x-value) compared to the` Activity Meausure ` (y-value) and used color to differentiate each point by the specific day in order to evaluate the 24 hour activity time courses foor each day. 
+
+From the plot we find that there are an increase in outlier later in the week and day as there are significant outliers from `Sunday` has notable outliers. Activity increases thoughout the `day` with activity increasing at `500 minutes` and  peaking between `1000` and `1500 minutes`.I also feel that this problem showcases the issue with large data, that using a scatterplot produces a somewhat jumbled mess that is difficult to decipher.
 
 ##Problem3
 ```{r}
-library(p8105.datasets)
 data("ny_noaa")
 ```
 
-1.The goal is to do some exploration of this dataset. 
-   a.To that end, write a short description of the dataset, noting the size and structure of the data, describing some key variables, and indicating the extent to which missing data is an issue. 
 
+Using `summary(ny_noaa)` and `nrows` and `ncols` we find that there are 259176 observations and 7 variables. There is significant missing data with there being 1372743 rows that contain missing data (from using `ny_noaa%>%drop_na()`). Of the 7 variables there is `id`, which contains the recording ID, `Date` whcih contains the date at which the event occurs. `Snow` which is the quantity of snow on the ground,`Prcp` which contains the precipitation data,`snwd`which contains the snowfall dropped, and finally there is `tmin` and `tmax` which are the minimum and maximum temperatures.Note that `tmin` and `tmax` are in units of tenths of degrees C
+ 
 
-There are 259176 observations and 7 variables. 
-
-2.Do some data cleaning. 
-   a.Create separate variables for year, month, and day. 
-   
-   b.Ensure observations for temperature, precipitation, and snowfall are given in reasonable units.
-   
-   c.For snowfall, what are the most commonly observed values? Why?
 ```{r}
 ny_noaa_tidy =
    ny_noaa %>%
@@ -144,20 +154,21 @@ ny_noaa_tidy =
       mutate(
          month = as.numeric(month),
          month = month.abb[month],
-         tmax = as.integer(tmax),
-         tmin = as.integer(tmin),
-         year = as.numeric(year)
+         tmax = as.numeric(tmax),
+         tmin = as.numeric(tmin),
+         year = as.numeric(year),
+         tmax=(tmax/10),
+         tmin=(tmin/10),
+         prcp=(prcp/10)
          )
 
    ny_noaa_tidy%>%
    group_by(snwd)%>%
    summarize (n_obs = n())
 ```
-The majority of observations in the `snowfall` variable is `0`, with there being `1621683` counts. 
+To clean the data I first had to separate the `date` variable into `year`,`month`,and `day`.Then I converted the `month` variable into abbreviated name variable. THen I converted `tmax` and `tmin` to integers and years to `numeric`.Using the `group_by(snwd)` and `summarize(n_obs = n())` functions we find that the majority (mean) of observations in the `snwd` (amount snowfall) variable is `0`, with there being `1621683` counts. Finally, I converted `tmax`, `tmin`, and `prcp` to mm from tenths of a mm. This would make sense as it does not snow the majority of the year and it does not snow evenly at each part of New York.
 
-3.Make a two-panel plot showing the average max temperature in January and in July in each station across years. 
-   
-   a.Is there any observable / interpretable structure? 
+
 ```{r}
 ny_noaa_tidy = 
    ny_noaa_tidy%>%
@@ -167,7 +178,6 @@ ny_noaa_tidy =
    )
 ```
 
-   b.Any outliers?
 ```{r}
    ny_noaa_tidy %>%
    filter(month %in% c('Jul','Jan')) %>%
@@ -177,13 +187,14 @@ ny_noaa_tidy =
       breaks = c(1981,1986,1991,1996,2001,2006,2010),
       labels = c('1981','1986','1991','1996','2001','2006','2010')
 )
-```
 
-4.Make a two-panel plot showing: 
-   
-   a.tmax vs tmin for the full dataset (note that a scatterplot may not be the best option)
-   
-   b. make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
+ggsave('average max temperature (in C) in January and July.pdf')
+```
+I first created the `tmax_avg` variable by taking the `mean` of `tmax` and selecting for `id`,`month`, and `year`.The I created the spaghetti plot style graph. I simplified the x-lables by breaking it into every 5 years (except from 2006 to 2010. 
+
+The graph showcases an interesting structure, creating a wave like structure.This would make sense as the temperature in `January` and `July` would largely stay consistent with small fluctuations.  
+
+From analyzing the graph there are for `January` there are outliers in the year 1984 where the `tmax_avg` reached below -10 C, There was also an outlier in 1999 and 2004 where the `tmax_avg` reached 10  C. These outliers seem to increase as the years progress (Yay climate change!) With singificant amount of outliers occuring from `2001` to `2010`. In July there is a signifcant outlier between 1986 and 1991 (close to 20 C). There were were outliers below -10 C between 1981 and 1986.
 
 ```{r}
  tmax_vs_tmin=   
@@ -199,9 +210,12 @@ ny_noaa_tidy =
    geom_histogram() +
    facet_grid(. ~ year) +
    theme(axis.text.x = element_blank(), legend.position = "none")+
-   labs(title = " Distribution of snowfall by year")
+   labs(title = " Distribution of snowfall by year") 
    
    (tmax_vs_tmin + snows)
    
+   ggsave('tmax (in mm) vs tmin (in mm) and Distribution of snowfall by year.pdf')
+   
 ```
 
+This graph evaluates a hex graph for the `minimum temperature` vs the` maximum temperature `and compares it by the distribution of snowfall by year.We find the distribution of snowfall decreases over the years significantly, with an increase in outlying high snowfall years. However as there are so many graphs it is difficult to tell which years this is. It is interesting to note that there is a low snowall amount both before and after a high snowfall year. In the context of this increasing distribution of snow it is interesting to consider just how much overlap there is between the `tmax` and `tmin` between 0 and 30 C. 
