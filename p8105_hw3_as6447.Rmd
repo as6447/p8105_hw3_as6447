@@ -112,10 +112,7 @@ Accel_data_agg=
       names_from = 'day',
       values_from = 'total_activity'
    )%>%
-   relocate(Sunday,Monday,Tuesday,Wednesday,Thursday,Friday, .after = week)
-
-accel_Data_agg_table=
-   Accel_data_agg%>%table
+   relocate(Sunday,Monday,Tuesday,Wednesday,Thursday,Friday, .after = week)%>% knitr::kable(digits = 2)
 ```
 
 Using `summary(Accel_data_agg)` we can find that there is a decrease in the `total activity` committed across `week` with the data from week 1 to week 5. There is also a decrease in the `total activity` committed across the days with `Sunday` having the highest score (median 422018) and `Saturday` having the lowest score (273847). 
